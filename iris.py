@@ -114,6 +114,19 @@ class irisRequests:
     
     @staticmethod
     def url_data(network, station,start, end, channel=None, quality="B", repo="primary"):
+        '''
+            Creates the url for downloading a waveform from a specified station in a given network.
+
+            Parameters:
+                network (string): network's name
+                station (string): station's name
+                start (datetime): time origin of the waveform
+                end (datetime): time end of the waveform
+                channel (string): if None, all the available channels are included.
+
+            Returns:
+                url (string): the url to download waveform data.
+        '''
         data_f = {"network" : network,
                     "station" : station,
                     "quality" : quality,

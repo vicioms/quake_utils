@@ -45,32 +45,87 @@ def J2000_to_utc(secs):
     t_utc = astropy.time.Time(t_gps, format="iso", scale="utc")
     return t_utc.datetime
 
-
-
-''' 
-Download and process the station list from NGL provided in the url
-
-Keyword arguments:
-url: station list url
-'''
 def ngl_process_list(url):
+    ''' 
+        Download and pre-process the station list from NGL provided in the url
+        The possible urls are given by the internal variables:
+        ngl_24h_2w, ngl_24h_24h, ngl_5min_24h, ngl_5min_1h30min
+
+        Keyword arguments:
+        url (string): station list url
+
+        Returns:
+        station_list (DataFrame)
+    '''
     station_list = pd.read_csv(url, sep=r"\s+", on_bad_lines='skip', parse_dates=['Dtbeg', 'Dtend'])
     station_list.rename(columns={'Sta' : 'name', 'Lat(deg)' : 'lat', 'Long(deg)' : 'lon', 'Hgt(m)' : 'height', 'X(m)' : 'x', 'Y(m)' : 'y', 'Z(m)' : 'z', 'Dtbeg' : 'begin', 'Dtend' : 'end'   }, inplace=True)
     station_list['lon'] =  (station_list['lon'] + 180)%360-180 # ensures values in [-180, 180]
     return station_list
 
-''' 
-Given a station list (Pandas), extract all the station within a radius
-
-Keyword arguments:
-station_list: Pandas DataFrame
-lat_origin: center latitude
-lon_origin: center longitude
-maximal_radius: circle radius
-'''
 def get_all_stations_within_radius(station_list, lat_origin, lon_origin, maximal_radius, r0=6371):
-        dists = haversine_distances(np.radians(station_list[['lat','lon']].values), np.radians(np.array([lat_origin, lon_origin]))[None,:])[:,0]
-        return station_list.name.values[dists <= maximal_radius/r0].astype('str')
+    ''' 
+        Given a station list (Pandas), extract all the station within a radius
+        
+        Keyword arguments:
+            station_list: Pandas DataFrame
+            lat_origin: center latitude
+            lon_origin: center longitude
+            maximal_radius: circle radius
+        Returns:
+            names (numpy.ndarray): a NumPy array of string, containing the names of the station in the given circle.
+    '''
+    dists = haversine_distances(np.radians(station_list[['lat','lon']].values), np.radians(np.array([lat_origin, lon_origin]))[None,:])[:,0]
+    return station_list.name.values[dists <= maximal_radius/r0].astype('str')
+
+def ngl_retrieve_24h(rootpath, station_name,force_download=False):
+    ''' 
+        Load if existing or download a station's data in folder 'rootpath'. 
+        Only post-processing is a rename of columns to be more readable.
+
+        Keyword arguments:
+            rootpath (string): path (ending with "/")
+            station_name (string): the name of the station
+
+        Returns:
+            data (DataFrame)
+    '''
+    # site YYMMMDD yyyy.yyyy __MJD week d reflon
+    #  _e0(m) __east(m) ____n0(m) _north(m) u0(m) ____up(m) 
+    # _ant(m) sig_e(m) sig_n(m) sig_u(m) 
+    # __corr_en __corr_eu __corr_nu 
+    # _latitude(deg) _longitude(deg) __height(m)
+    data_type="tenv3"
+    
+    base_url = "http://geodesy.unr.edu/gps_timeseries/" + data_type
+    filename = rootpath + station_name + ".csv"
+    if(not force_download):
+        if(os.path.exists(filename)):
+            return pd.read_csv(filename, sep =" ", parse_dates=['date']), "loaded" 
+
+    data =  pd.read_csv(base_url + "/IGS14/" + station_name + "." + data_type, sep=r"\s+")
+    data['date'] = [fraction_year_to_datetime(str(s)) for s in data['yyyy.yyyy']]
+    data['date'] = data['date'].values.astype('datetime64[D]')
+
+    labels_to_rename = {"_e0(m)" : "e0",
+                         "__east(m)" : "east",
+                         " ____n0(m)" : "n0",
+                         "_north(m)" : "north",
+                         "u0(m)" : "u0",
+                         "____up(m)" : "up",
+                         "_ant(m)" : "antenna",
+                         "sig_e(m)" : "sigma_e",
+                         "sig_n(m)" : "sigma_n",
+                         "sig_u(m)" : "sigma_u",
+                         "__corr_en" : "corr_en",
+                         "__corr_eu" : "corr_eu",
+                         "__corr_nu" : "corr_nu", 
+                          "_latitude(deg)" : "lat" ,
+                          "_longitude(deg)" : "lon", 
+                          "__height(m)": "height"}
+    data.rename(labels_to_rename,axis=1, inplace=True)
+    data.to_csv(filename, sep=" ", index=False)
+    return data, "downloaded"
+
 
 ''' 
 Download a station's data at a given year. No post-processing is done.
@@ -154,50 +209,7 @@ def fraction_year_to_datetime(s):
     date = datetime.datetime(year, 1, 1) + datetime.timedelta(days=day_of_year - 1)
     return date
 
-''' 
-Load existing or download a station's data. 
-Only post-processing is a rename of columns to be more readable.
 
-Keyword arguments:
-station_name: station name
-'''
-def ngl_final_24h(rootpath, station_name,force_download=False):
-    # site YYMMMDD yyyy.yyyy __MJD week d reflon
-    #  _e0(m) __east(m) ____n0(m) _north(m) u0(m) ____up(m) 
-    # _ant(m) sig_e(m) sig_n(m) sig_u(m) 
-    # __corr_en __corr_eu __corr_nu 
-    # _latitude(deg) _longitude(deg) __height(m)
-    data_type="tenv3"
-    filename = rootpath + station_name + ".csv"
-    base_url = "http://geodesy.unr.edu/gps_timeseries/" + data_type
-    if(not force_download):
-        if(os.path.exists(filename)):
-            return pd.read_csv(filename, sep =" ", parse_dates=['date']), "loaded"
-        
-
-    data =  pd.read_csv(base_url + "/IGS14/" + station_name + "." + data_type, sep=r"\s+")
-    data['date'] = [fraction_year_to_datetime(str(s)) for s in data['yyyy.yyyy']]
-    data['date'] = data['date'].values.astype('datetime64[D]')
-
-    labels_to_rename = {"_e0(m)" : "e0",
-                         "__east(m)" : "east",
-                         " ____n0(m)" : "n0",
-                         "_north(m)" : "north",
-                         "u0(m)" : "u0",
-                         "____up(m)" : "up",
-                         "_ant(m)" : "antenna",
-                         "sig_e(m)" : "sigma_e",
-                         "sig_n(m)" : "sigma_n",
-                         "sig_u(m)" : "sigma_u",
-                         "__corr_en" : "corr_en",
-                         "__corr_eu" : "corr_eu",
-                         "__corr_nu" : "corr_nu", 
-                          "_latitude(deg)" : "lat" ,
-                          "_longitude(deg)" : "lon", 
-                          "__height(m)": "height"}
-    data.rename(labels_to_rename,axis=1, inplace=True)
-    data.to_csv(filename, sep=" ", index=False)
-    return data, "downloaded"
 
 #class NGLDownloader:
 #    
