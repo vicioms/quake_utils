@@ -147,7 +147,6 @@ class irisRequests:
     
     @staticmethod
     def process_data_url(url):
-        
         filehandle,_ = urllib.request.urlretrieve(url )
         if(".zip" in url):
 
@@ -159,7 +158,10 @@ class irisRequests:
                 df, header = irisRequests.__process_data_file(file)
                 dataframes[channel] = (df,header) 
             return dataframes
-
+        else:
+            raise NotImplementedError("Download of one single channel is not yet available.")
+    
+    
     # EVENTS
 
     @staticmethod
