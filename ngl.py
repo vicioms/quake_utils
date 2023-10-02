@@ -75,7 +75,8 @@ def get_all_stations_within_radius(station_list, lat_origin, lon_origin, maximal
             names (numpy.ndarray): a NumPy array of string, containing the names of the station in the given circle.
     '''
     dists = haversine_distances(np.radians(station_list[['lat','lon']].values), np.radians(np.array([lat_origin, lon_origin]))[None,:])[:,0]
-    return station_list.name.values[dists <= maximal_radius/r0].astype('str')
+    mask = dists <= maximal_radius/r0
+    return station_list.name.values[mask].astype('str'), station_list.lat.values[mask].astype('float'), station_list.lon.values[mask].astype('float')
 
 def ngl_retrieve_24h(rootpath, station_name,force_download=False):
     ''' 
@@ -101,30 +102,32 @@ def ngl_retrieve_24h(rootpath, station_name,force_download=False):
     if(not force_download):
         if(os.path.exists(filename)):
             return pd.read_csv(filename, sep =" ", parse_dates=['date']), "loaded" 
+    try:
+        data =  pd.read_csv(base_url + "/IGS14/" + station_name + "." + data_type, sep=r"\s+")
+        data['date'] = [fraction_year_to_datetime(str(s)) for s in data['yyyy.yyyy']]
+        data['date'] = data['date'].values.astype('datetime64[D]')
 
-    data =  pd.read_csv(base_url + "/IGS14/" + station_name + "." + data_type, sep=r"\s+")
-    data['date'] = [fraction_year_to_datetime(str(s)) for s in data['yyyy.yyyy']]
-    data['date'] = data['date'].values.astype('datetime64[D]')
-
-    labels_to_rename = {"_e0(m)" : "e0",
-                         "__east(m)" : "east",
-                         " ____n0(m)" : "n0",
-                         "_north(m)" : "north",
-                         "u0(m)" : "u0",
-                         "____up(m)" : "up",
-                         "_ant(m)" : "antenna",
-                         "sig_e(m)" : "sigma_e",
-                         "sig_n(m)" : "sigma_n",
-                         "sig_u(m)" : "sigma_u",
-                         "__corr_en" : "corr_en",
-                         "__corr_eu" : "corr_eu",
-                         "__corr_nu" : "corr_nu", 
-                          "_latitude(deg)" : "lat" ,
-                          "_longitude(deg)" : "lon", 
-                          "__height(m)": "height"}
-    data.rename(labels_to_rename,axis=1, inplace=True)
-    data.to_csv(filename, sep=" ", index=False)
-    return data, "downloaded"
+        labels_to_rename = {"_e0(m)" : "e0",
+                             "__east(m)" : "east",
+                             "____n0(m)" : "n0",
+                             "_north(m)" : "north",
+                             "u0(m)" : "u0",
+                             "____up(m)" : "up",
+                             "_ant(m)" : "antenna",
+                             "sig_e(m)" : "sigma_e",
+                             "sig_n(m)" : "sigma_n",
+                             "sig_u(m)" : "sigma_u",
+                             "__corr_en" : "corr_en",
+                             "__corr_eu" : "corr_eu",
+                             "__corr_nu" : "corr_nu", 
+                              "_latitude(deg)" : "lat" ,
+                              "_longitude(deg)" : "lon", 
+                              "__height(m)": "height"}
+        data.rename(labels_to_rename,axis=1, inplace=True)
+        data.to_csv(filename, sep=" ", index=False)
+        return data, "downloaded"
+    except:
+        return None, "failed"
 
 
 ''' 
