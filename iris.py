@@ -40,14 +40,14 @@ class irisRequests:
     
     @staticmethod
     def __format_magnitude(minmag=None, maxmag=None, magtype= None):
-        format = {}
+        download_format = {}
         if(minmag is not None):
-            format["minmag"] = minmag
+            download_format["minmag"] = minmag
         if(maxmag is not None):
-            format["maxmag"] = maxmag
+            download_format["maxmag"] = maxmag
         if(magtype is None):
-            format["magnitudetype"] = "preferred"
-        return format
+            download_format["magnitudetype"] = "preferred"
+        return download_format
     
     @staticmethod
     def __format_url(base_url, formats):

@@ -62,6 +62,12 @@ def ngl_process_list(url):
     station_list['lon'] =  (station_list['lon'] + 180)%360-180 # ensures values in [-180, 180]
     return station_list
 
+def get_all_stations_box(station_list, min_lat, max_lat, min_lon, max_lon):
+    mask = station_list.lat.values >= min_lat
+    mask *= station_list.lat.values <= max_lat
+    mask *= station_list.lon.values >= min_lon
+    mask *= station_list.lon.values <= max_lon
+    return station_list.name.values[mask].astype('str'), station_list.lat.values[mask].astype('float'), station_list.lon.values[mask].astype('float')
 def get_all_stations_within_radius(station_list, lat_origin, lon_origin, maximal_radius, r0=6371):
     ''' 
         Given a station list (Pandas), extract all the station within a radius
@@ -101,10 +107,13 @@ def ngl_retrieve_24h(rootpath, station_name,force_download=False):
     filename = rootpath + station_name + ".csv"
     if(not force_download):
         if(os.path.exists(filename)):
-            return pd.read_csv(filename, sep =" ", parse_dates=['date']), "loaded" 
+            data = pd.read_csv(filename, sep =" ", parse_dates=['date'])
+            data.lat = data.lat % 90
+            data.lon = data.lon % 180
+            return data, "loaded"
     try:
         data =  pd.read_csv(base_url + "/IGS14/" + station_name + "." + data_type, sep=r"\s+")
-        data['date'] = [fraction_year_to_datetime(str(s)) for s in data['yyyy.yyyy']]
+        data['date'] = [str_to_datetime_2000(str(s)) for s in data['YYMMMDD']]
         data['date'] = data['date'].values.astype('datetime64[D]')
 
         labels_to_rename = {"_e0(m)" : "e0",
@@ -123,6 +132,8 @@ def ngl_retrieve_24h(rootpath, station_name,force_download=False):
                               "_latitude(deg)" : "lat" ,
                               "_longitude(deg)" : "lon", 
                               "__height(m)": "height"}
+        data.lat = data.lat % 90
+        data.lon = data.lon % 180
         data.rename(labels_to_rename,axis=1, inplace=True)
         data.to_csv(filename, sep=" ", index=False)
         return data, "downloaded"
