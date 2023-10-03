@@ -111,34 +111,32 @@ def ngl_retrieve_24h(rootpath, station_name,force_download=False):
             data.lat = data.lat % 90
             data.lon = data.lon % 180
             return data, "loaded"
-    try:
-        data =  pd.read_csv(base_url + "/IGS14/" + station_name + "." + data_type, sep=r"\s+")
-        data['date'] = [str_to_datetime_2000(str(s)) for s in data['YYMMMDD']]
-        data['date'] = data['date'].values.astype('datetime64[D]')
-
-        labels_to_rename = {"_e0(m)" : "e0",
-                             "__east(m)" : "east",
-                             "____n0(m)" : "n0",
-                             "_north(m)" : "north",
-                             "u0(m)" : "u0",
-                             "____up(m)" : "up",
-                             "_ant(m)" : "antenna",
-                             "sig_e(m)" : "sigma_e",
-                             "sig_n(m)" : "sigma_n",
-                             "sig_u(m)" : "sigma_u",
-                             "__corr_en" : "corr_en",
-                             "__corr_eu" : "corr_eu",
-                             "__corr_nu" : "corr_nu", 
-                              "_latitude(deg)" : "lat" ,
-                              "_longitude(deg)" : "lon", 
-                              "__height(m)": "height"}
-        data.lat = data.lat % 90
-        data.lon = data.lon % 180
-        data.rename(labels_to_rename,axis=1, inplace=True)
-        data.to_csv(filename, sep=" ", index=False)
-        return data, "downloaded"
-    except:
-        return None, "failed"
+    download_url = base_url + "/IGS14/" + station_name + "." + data_type
+    data =  pd.read_csv(download_url, sep=r"\s+")
+    data['date'] = [str_to_datetime_2000(str(s)) for s in data['YYMMMDD']]
+    data['date'] = data['date'].values.astype('datetime64[D]')
+    #assert "_latitude(deg)" in data.columns
+    labels_to_rename = {"_e0(m)" : "e0",
+                         "__east(m)" : "east",
+                         "____n0(m)" : "n0",
+                         "_north(m)" : "north",
+                         "u0(m)" : "u0",
+                         "____up(m)" : "up",
+                         "_ant(m)" : "antenna",
+                         "sig_e(m)" : "sigma_e",
+                         "sig_n(m)" : "sigma_n",
+                         "sig_u(m)" : "sigma_u",
+                         "__corr_en" : "corr_en",
+                         "__corr_eu" : "corr_eu",
+                         "__corr_nu" : "corr_nu", 
+                          "_latitude(deg)" : "lat" ,
+                          "_longitude(deg)" : "lon", 
+                          "__height(m)": "height"}
+    data.rename(labels_to_rename,axis=1, inplace=True)
+    data.lat = data.lat % 90
+    data.lon = data.lon % 180
+    data.to_csv(filename, sep=" ", index=False)
+    return data, "downloaded"
 
 
 ''' 
