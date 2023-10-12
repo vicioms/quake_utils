@@ -63,6 +63,14 @@ def ngl_process_list(url):
     return station_list
 
 def get_all_stations_box(station_list, min_lat, max_lat, min_lon, max_lon):
+    '''
+    By passing a 'station_list' dowloaded from 'ngl_process_list',
+    returns the names, latitude, and longitude of
+    all stations within the box described by ( min_lat, max_lat, min_lon, max_lon)
+
+    Returns:
+        names, lats, lons (Tuple)
+    '''
     mask = station_list.lat.values >= min_lat
     mask *= station_list.lat.values <= max_lat
     mask *= station_list.lon.values >= min_lon

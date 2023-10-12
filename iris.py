@@ -68,7 +68,7 @@ class irisRequests:
             df['Longitude'] = pd.to_numeric(df['Longitude'], errors='coerce')
         if('Elevation' in df.columns):
             df['Elevation'] = pd.to_numeric(df['Elevation'], errors='coerce')
-        df.dropna(inplace=True)
+        #df.dropna(inplace=True)
         df['StartTime'] = pd.to_datetime(df['StartTime'], errors='coerce')
         df['EndTime'] = pd.to_datetime(df['EndTime'], errors='coerce')
         return df
