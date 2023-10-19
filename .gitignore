@@ -162,4 +162,5 @@ cython_debug/
 ngl-5min.ipynb
 ngl.ipynb
 csv_24/
-*.npz
+gps/csv_24/
+gps/*.npz
