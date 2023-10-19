@@ -52,7 +52,7 @@ class SeismicSequence:
                 f"Error in either start or end. start must be >= {self.t_start} and end must be <= {self.t_end}"
             )
         mask = (self.arrival_times >= start) & (self.arrival_times <= end)
-        
+        new_arrival_times = self.arrival_times[mask]
         
         
         
@@ -60,12 +60,15 @@ class SeismicSequence:
         new_arrival_times = self.arrival_times[mask]
         if(len(new_arrival_times) > 0):
             # find the last gap, to add to the new inter_times
+            # we keep type and device
             last_inter_time = torch.tensor(
                 [end - new_arrival_times[-1]],
                 device=self.inter_times.device,
                 dtype=self.inter_times.dtype,
             )
-            # we skip the last element from inter_times
+            # we skip the last element from inter_times, as it refers to the old last time
             new_inter_times = torch.cat([self.inter_times[:-1][mask], last_inter_time])
-            # 
             first_inter_time = new_arrival_times[0] - start
+            new_inter_times[0] = first_inter_time
+            print(new_inter_times)
+            print(new_arrival_times)
