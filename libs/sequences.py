@@ -1,4 +1,5 @@
 import torch
+from torch.nn.utils.rnn import pad_sequence
 import pandas as pd
 import numpy as np
 import datetime
@@ -14,8 +15,11 @@ class SeismicSequence:
             return np.diff(arrival_times,prepend=t_start, append=t_end)
     
     @staticmethod
-    def pack_sequences(s_list : list):
-        raise NotImplementedError()
+    def pack_sequences(seq_list : list):
+        inter_times = [seq.inter_times for seq in seq_list if isinstance(seq, SeismicSequence)]
+        inter_times = pad_sequence(inter_times, batch_first=True, padding_value=0)
+        features = 
+
 
     def __init__(self, inter_times: Union[torch.Tensor, np.ndarray],
                  t_start : float = 0.0,
@@ -44,19 +48,12 @@ class SeismicSequence:
         else:
             self.features = None
             
-    def get_subsequence(self,
-                        start : float,
-                        end : float):
+    def get_subsequence(self, start : float, end : float):
         if start < self.t_start or end > self.t_end:
             raise ValueError(
                 f"Error in either start or end. start must be >= {self.t_start} and end must be <= {self.t_end}"
             )
         mask = (self.arrival_times >= start) & (self.arrival_times <= end)
-        new_arrival_times = self.arrival_times[mask]
-        
-        
-        
-        
         new_arrival_times = self.arrival_times[mask]
         if(len(new_arrival_times) > 0):
             # find the last gap, to add to the new inter_times
@@ -70,5 +67,14 @@ class SeismicSequence:
             new_inter_times = torch.cat([self.inter_times[:-1][mask], last_inter_time])
             first_inter_time = new_arrival_times[0] - start
             new_inter_times[0] = first_inter_time
-            print(new_inter_times)
-            print(new_arrival_times)
+        else:
+            new_inter_times = torch.tensor(
+                [end - start],
+                device=self.inter_times.device,
+                dtype=self.inter_times.dtype,
+            )
+        new_features = self.features[mask].contiguous()
+        return SeismicSequence(new_inter_times,
+                               t_start=start,
+                               t_nll_start=max(self.t_nll_start, start),
+                               features=new_features)
