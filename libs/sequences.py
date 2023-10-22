@@ -18,21 +18,23 @@ class SeismicSequence:
     def pack_sequences(seq_list : list):
         inter_times = [seq.inter_times for seq in seq_list if isinstance(seq, SeismicSequence)]
         inter_times = pad_sequence(inter_times, batch_first=True, padding_value=0)
-        features = 
-
-
+        features = [seq.features for seq in seq_list if isinstance(seq, SeismicSequence)]
+        lengths = torch.as_tensor([len(f) for f in features])
+        features = pad_sequence(features, batch_first=True, padding_value=0 )
+        return inter_times, features, lengths
+    
     def __init__(self, inter_times: Union[torch.Tensor, np.ndarray],
                  t_start : float = 0.0,
                  t_nll_start : Optional[float] = None,
                  features : Optional[Union[torch.Tensor, np.ndarray]] = None):
-    
+        # we save the inter arrival times ("tau")
         self.inter_times =  torch.flatten(torch.as_tensor(inter_times))
         if not self.inter_times.dtype in [torch.float32, torch.float64]:
             raise ValueError(
                 f"Supported types for inter_times are torch.float32 or torch.float64"
                 "(got {self.inter_times.dtype})"
             )
-            
+        # the arrival times  ("t") are obtained from inter_times  by summing them and adding t_start
         self.arrival_times = self.inter_times.cumsum(dim=-1)[:-1] + t_start
         self.t_start = float(t_start)
         self.t_end = float(self.inter_times.sum().item() + self.t_start)
