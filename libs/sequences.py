@@ -13,7 +13,13 @@ class SeismicSequence:
         t_start = df[time_label].iloc[0].to_datetime64().astype('datetime64[D]')
         t_end = df[time_label].iloc[-1].to_datetime64().astype('datetime64[D]') + np.timedelta64(1, 'D')
         arrival_times = df[time_label].values
-        inter_times = np.diff(arrival_times, prepend=t_start, append=t_end).astype('timedelta64[%s]' % unit).astype('float')        
+        inter_times = np.diff(arrival_times, prepend=t_start, append=t_end)
+        if(unit == 'D'):
+            inter_times = inter_times.astype('float')*1e-9/86400
+        elif(unit == 's'):
+            inter_times = (inter_times.astype('float')*1e-9)
+        else:
+            raise NotImplementedError("Time unit %s is not implemented." % unit)        
         features = df[other_labels].values
         return SeismicSequence(inter_times, t_start=0, features=features)
     @staticmethod

@@ -164,3 +164,4 @@ ngl.ipynb
 csv_24/
 gps/csv_24/
 gps/*.npz
+catalogs/*.csv
