@@ -7,6 +7,15 @@ from typing import Union, Optional
 
 # inspired by https://zenodo.org/record/8161777
 class SeismicSequence:
+
+    @staticmethod
+    def from_pandas_df(df, time_label = "Time", other_labels = ["Latitude", "Longitude", "Magnitude"], unit='s'):
+        t_start = df[time_label].iloc[0].to_datetime64().astype('datetime64[D]')
+        t_end = df[time_label].iloc[-1].to_datetime64().astype('datetime64[D]') + np.timedelta64(1, 'D')
+        arrival_times = df[time_label].values
+        inter_times = np.diff(arrival_times, prepend=t_start, append=t_end).astype('timedelta64[%s]' % unit).astype('float')        
+        features = df[other_labels].values
+        return SeismicSequence(inter_times, t_start=0, features=features)
     @staticmethod
     def arrival_to_inter_times(arrival_times : Union[torch.tensor, np.ndarray, list],t_start : float, t_end : float):
         if isinstance(arrival_times, torch.Tensor):
