@@ -38,12 +38,18 @@ class SeismicSequence:
         features = pad_sequence(features, batch_first=True, padding_value=0 )
         return inter_times, features, lengths
     
+    @staticmethod
+    def pack_sequences_mask(lengths, longest_sequence_length):
+        lengths_arange = torch.arange(longest_sequence_length, device=lengths.device)
+        mask = (lengths_arange[None, :] < lengths[:, None]).float()  # (N, longest_sequence_length)
+        return mask
+        
     def __init__(self, inter_times: Union[torch.Tensor, np.ndarray],
                  t_start : float = 0.0,
                  t_nll_start : Optional[float] = None,
                  features : Optional[Union[torch.Tensor, np.ndarray]] = None):
         # we save the inter arrival times ("tau")
-        self.inter_times =  torch.flatten(torch.as_tensor(inter_times))
+        self.inter_times =  torch.flatten(torch.as_tensor(inter_times, dtype=torch.float32))
         if not self.inter_times.dtype in [torch.float32, torch.float64]:
             raise ValueError(
                 f"Supported types for inter_times are torch.float32 or torch.float64"
@@ -57,7 +63,7 @@ class SeismicSequence:
             t_nll_start = t_start
         self.t_nll_start = float(t_nll_start)
         if(features is not None):
-            self.features = torch.as_tensor(features)
+            self.features = torch.as_tensor(features, dtype=torch.float32)
             if self.features.shape[0] != self.arrival_times.shape[0]: # different sequence length!!!!
                 raise ValueError(
                 f"The length of features is different from the (induced) length of arrival times."
