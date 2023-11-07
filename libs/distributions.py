@@ -74,4 +74,12 @@ class GaussianMM:
         return torch.sum(log_p*self.pip, dim=-1)
     
         
+
+class Gaussian_ale_easy(InterTimeDistribution):
+    def __init__(self, mu_params, sigma_params) -> None:
+        self.mu = mu_params
+        self.sigma = sigma_params
         
+    def get_log_prob(self, x):
+        ones_tensor = torch.ones_like(x)
+        return (-0.5) * torch.pow(torch.div(x + self.mu.neg(), self.sigma), 2) + self.sigma.log().neg() + 0.5*torch.log(ones_tensor*(2*torch.pi)).neg()
