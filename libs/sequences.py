@@ -39,10 +39,12 @@ class SeismicSequence:
         return inter_times, features, lengths
     
     @staticmethod
-    def pack_sequences_mask(lengths, longest_sequence_length):
+    def get_lengths_mask(lengths, longest_sequence_length):
         lengths_arange = torch.arange(longest_sequence_length, device=lengths.device)
         mask = (lengths_arange[None, :] < lengths[:, None]).float()  # (N, longest_sequence_length)
         return mask
+
+    
         
     def __init__(self, inter_times: Union[torch.Tensor, np.ndarray],
                  t_start : float = 0.0,
