@@ -165,3 +165,5 @@ csv_24/
 gps/csv_24/
 gps/*.npz
 catalogs/*.csv
+catalogs/*.txt
+catalogs/*.gc

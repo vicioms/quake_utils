@@ -1,4 +1,3 @@
-import jdutil
 import astropy
 import astropy.time
 import numpy as np
