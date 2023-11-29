@@ -140,8 +140,8 @@ def ngl_retrieve_24h(rootpath, station_name,force_download=False):
                           "_longitude(deg)" : "lon", 
                           "__height(m)": "height"}
     data.rename(labels_to_rename,axis=1, inplace=True)
-    data.lat = data.lat % 90
-    data.lon = data.lon % 180
+    #data.lat = data.lat % 90
+    #data.lon = data.lon % 180
     data.to_csv(filename, sep=" ", index=False)
     return data, "downloaded"
 

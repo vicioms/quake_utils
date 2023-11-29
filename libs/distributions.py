@@ -50,15 +50,20 @@ class WeibullMM(InterTimeDistribution):
         # x must have shape equal to b & k
         # assure no inter_time is zero
         x = x.clamp_min(self.eps)
-        x = torch.unsqueeze(x, -1)
-        log_p = (self.b.log() + self.k.log() + (self.k - 1) * x.log() 
-                + self.b.neg() * torch.pow(x, self.k))
+        n_mixtures = self.b.size()[-1]
+        x_rep = x[:,:,None].repeat((1,1,n_mixtures))
+        #x = torch.unsqueeze(x, -1)
+        log_p = (self.b.log() + self.k.log() + (self.k - 1) * x_rep.log() 
+                + self.b.neg() * torch.pow(x_rep, self.k))
+                
         return torch.sum(log_p*self.pip, dim=-1)
 
     def get_log_survival(self, x) -> torch.Tensor:
         x = x.clamp_min(self.eps)
-        x = torch.unsqueeze(x, -1)
-        log_s = self.b.neg() * torch.pow(x, self.k)
+        n_mixtures = self.b.size()[-1]
+        x_rep = x[:,:,None].repeat((1,1,n_mixtures))
+        #x = torch.unsqueeze(x, -1)
+        log_s = self.b.neg() * torch.pow(x_rep, self.k)
         return torch.sum(log_s*self.pip, dim=-1)
     
     
