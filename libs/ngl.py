@@ -115,8 +115,8 @@ def ngl_retrieve_24h(rootpath, station_name,force_download=False):
     if(not force_download):
         if(os.path.exists(filename)):
             data = pd.read_csv(filename, sep =" ", parse_dates=['date'])
-            data.lat = data.lat % 90
-            data.lon = data.lon % 180
+            #data.lat = data.lat % 90
+            #data.lon = data.lon % 180
             return data, "loaded"
     download_url = base_url + "/IGS14/" + station_name + "." + data_type
     data =  pd.read_csv(download_url, sep=r"\s+")
